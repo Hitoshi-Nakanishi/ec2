@@ -18,7 +18,7 @@ from dreamcoder.utilities import testTrainSplit, eprint, numberOfCPUs
 
 
 def makeTask(name, f, actualParameters):
-    xs = [x / 100. for x in range(-500, 500)]
+    xs = [x / 100.0 for x in range(-500, 500)]
 
     maximum = 10
 
@@ -37,17 +37,20 @@ def makeTask(name, f, actualParameters):
 
     if len(inputs) >= N:
         ex = list(zip(inputs, outputs))
-        ex = ex[::int(len(ex) / N)][:N]
-        t = DifferentiableTask(name,
-                               arrow(treal, treal),
-                               [((x,),y) for x, y in ex],
-                               BIC=1.,
-                               restarts=360, steps=50,
-                               likelihoodThreshold=-0.05,
-                               temperature=0.1,
-                               actualParameters=actualParameters,
-                               maxParameters=6,
-                               loss=squaredErrorLoss)
+        ex = ex[:: int(len(ex) / N)][:N]
+        t = DifferentiableTask(
+            name,
+            arrow(treal, treal),
+            [((x,), y) for x, y in ex],
+            BIC=1.0,
+            restarts=360,
+            steps=50,
+            likelihoodThreshold=-0.05,
+            temperature=0.1,
+            actualParameters=actualParameters,
+            maxParameters=6,
+            loss=squaredErrorLoss,
+        )
         t.f = f
         return t
 
@@ -62,17 +65,23 @@ def randomCoefficient(m=5):
     f = float("%0.1f" % f)
     return f
 
+
 def randomOffset():
     c = randomCoefficient(m=2.5)
-    def f(x): return x + c
+
+    def f(x):
+        return x + c
+
     name = "x + %0.1f" % c
     return name, f
+
 
 def randomPolynomial(order):
     coefficients = [randomCoefficient(m=2.5) for _ in range(order + 1)]
 
     def f(x):
-        return sum(c * (x**(order - j)) for j, c in enumerate(coefficients))
+        return sum(c * (x ** (order - j)) for j, c in enumerate(coefficients))
+
     name = ""
     for j, c in enumerate(coefficients):
         e = order - j
@@ -100,10 +109,11 @@ def randomFactored(order):
     offsets = [randomCoefficient(m=5) for _ in range(order)]
 
     def f(x):
-        p = 1.
+        p = 1.0
         for o in offsets:
             p = p * (x + o)
         return p
+
     name = ""
     for c in offsets:
         if c > 0:
@@ -119,7 +129,8 @@ def randomRational():
     nf = random.choice([1, 2])
     dn, d = randomFactored(nf)
 
-    def f(x): return n(x) / d(x)
+    def f(x):
+        return n(x) / d(x)
 
     if no == 0:
         name = "%s/[%s]" % (nn, dn)
@@ -134,7 +145,8 @@ def randomPower():
     c = randomCoefficient()
 
     def f(x):
-        return c * (x**(-e))
+        return c * (x ** (-e))
+
     if e == 1:
         name = "%0.1f/x" % c
     else:
@@ -142,30 +154,30 @@ def randomPower():
 
     return name, f
 
+
 def prettyFunction(f, export):
     import numpy as np
+
     n = 200
-    dx = 10.
+    dx = 10.0
 
     import matplotlib
-    #matplotlib.use('Agg')
+
+    # matplotlib.use('Agg')
 
     import matplotlib.pyplot as plot
 
     figure = plot.figure()
-    plot.plot(np.arange(-dx, dx, 0.05),
-              [0.5*f(x/2) for x in np.arange(-dx, dx, 0.05)],
-              linewidth=15,
-              color='c')
-    plot.ylim([-dx,dx])
+    plot.plot(np.arange(-dx, dx, 0.05), [0.5 * f(x / 2) for x in np.arange(-dx, dx, 0.05)], linewidth=15, color="c")
+    plot.ylim([-dx, dx])
     plot.gca().set_xticklabels([])
     plot.gca().set_yticklabels([])
     for tic in plot.gca().xaxis.get_major_ticks():
         tic.tick1On = tic.tick2On = False
-#    plot.xlabel([])
-    #plot.yticks([])
-    #plot.axis('off')
-    plot.grid(color='k',linewidth=2)
+    #    plot.xlabel([])
+    # plot.yticks([])
+    # plot.axis('off')
+    plot.grid(color="k", linewidth=2)
     plot.savefig(export)
     print(export)
     plot.close(figure)
@@ -175,27 +187,28 @@ def drawFunction(n, dx, f, resolution=64):
     import numpy as np
 
     import matplotlib
-    matplotlib.use('Agg')
+
+    matplotlib.use("Agg")
 
     import matplotlib.pyplot as plot
     from PIL import Image
 
     figure = plot.figure()
-    plot.plot(np.arange(-dx, dx, 0.05),
-              [f(x) for x in np.arange(-dx, dx, 0.05)],
-              linewidth=20)
+    plot.plot(np.arange(-dx, dx, 0.05), [f(x) for x in np.arange(-dx, dx, 0.05)], linewidth=20)
     plot.ylim([-10, 10])
-    plot.axis('off')
+    plot.axis("off")
     figure.canvas.draw()
     data = np.frombuffer(figure.canvas.tostring_rgb(), dtype=np.uint8)
     data = data.reshape(figure.canvas.get_width_height()[::-1] + (3,))
     data = data[:, :, 0]
     data = 255 - data
-    data = data / 255.
+    data = data / 255.0
     # print "upper and lower bounds before
     # resizing",np.max(data),np.min(data),data.dtype
-    data = np.array(Image.fromarray(data).resize(size=(resolution, resolution), resample=Image.BICUBIC).getdata()).reshape((resolution, resolution))
-        
+    data = np.array(Image.fromarray(data).resize(size=(resolution, resolution), resample=Image.BICUBIC).getdata()).reshape(
+        (resolution, resolution)
+    )
+
     # print "upper and lower bounds after
     # resizing",np.max(data),np.min(data),data.dtype
 
@@ -245,30 +258,32 @@ def makeTasks():
 
 class RandomParameterization(object):
     def primitive(self, e):
-        if e.name == 'REAL':
+        if e.name == "REAL":
             return Primitive(str(e), e.tp, randomCoefficient())
         return e
 
-    def invented(self, e): return e.body.visit(self)
+    def invented(self, e):
+        return e.body.visit(self)
 
-    def abstraction(self, e): return Abstraction(e.body.visit(self))
+    def abstraction(self, e):
+        return Abstraction(e.body.visit(self))
 
     def application(self, e):
         return Application(e.f.visit(self), e.x.visit(self))
 
-    def index(self, e): return e
+    def index(self, e):
+        return e
 
 
 RandomParameterization.single = RandomParameterization()
 
 
 class FeatureExtractor(ImageFeatureExtractor):
-    special = 'differentiable'
-    
+    special = "differentiable"
+
     def __init__(self, tasks, testingTasks=[], cuda=False, H=64):
         self.recomputeTasks = True
-        super(FeatureExtractor, self).__init__(inputImageDimension=64,
-                                               channels=1)
+        super(FeatureExtractor, self).__init__(inputImageDimension=64, channels=1)
         self.tasks = tasks
 
     def featuresOfTask(self, t):
@@ -277,12 +292,14 @@ class FeatureExtractor(ImageFeatureExtractor):
     def taskOfProgram(self, p, t):
         p = p.visit(RandomParameterization.single)
 
-        def f(x): return p.runWithArguments([x])
+        def f(x):
+            return p.runWithArguments([x])
+
         t = makeTask(str(p), f, None)
         if t is None:
             return None
-        t.features = drawFunction(200, 5., t.f)
-        delattr(t, 'f')
+        t.features = drawFunction(200, 5.0, t.f)
+        delattr(t, "f")
         return t
 
 
@@ -296,15 +313,16 @@ def demo():
 
         prettyFunction(f, f"/tmp/rational_demo/{name.replace('/','$')}.png")
         print(j, "\n", name)
-        a = drawFunction(200, 5., f, resolution=32) * 255
-        Image.fromarray(a).convert('RGB').save("/tmp/rational_demo/%d.png" % j)
+        a = drawFunction(200, 5.0, f, resolution=32) * 255
+        Image.fromarray(a).convert("RGB").save("/tmp/rational_demo/%d.png" % j)
     assert False
-#demo()    
+
+
+# demo()
+
 
 def rational_options(p):
-    p.add_argument("--smooth", action="store_true",
-                   default=False,
-                   help="smooth likelihood model")
+    p.add_argument("--smooth", action="store_true", default=False, help="smooth likelihood model")
 
 
 if __name__ == "__main__":
@@ -314,7 +332,7 @@ if __name__ == "__main__":
         featureExtractor=FeatureExtractor,
         iterations=6,
         CPUs=numberOfCPUs(),
-        structurePenalty=1.,
+        structurePenalty=1.0,
         recognitionTimeout=7200,
         helmholtzRatio=0.5,
         activation="tanh",
@@ -322,20 +340,25 @@ if __name__ == "__main__":
         a=3,
         topK=2,
         pseudoCounts=30.0,
-        extras=rational_options)
+        extras=rational_options,
+    )
 
-    primitives = [real,
-                  # f1,
-                  real_division, real_addition, real_multiplication]
+    primitives = [
+        real,
+        # f1,
+        real_division,
+        real_addition,
+        real_multiplication,
+    ]
     baseGrammar = Grammar.uniform(primitives)
     random.seed(42)
     tasks = makeTasks()
 
-    smooth = arguments.pop('smooth')
+    smooth = arguments.pop("smooth")
 
     for t in tasks:
-        t.features = drawFunction(200, 10., t.f)
-        delattr(t, 'f')
+        t.features = drawFunction(200, 10.0, t.f)
+        delattr(t, "f")
         if smooth:
             t.likelihoodThreshold = None
 
@@ -347,39 +370,31 @@ if __name__ == "__main__":
     eprint("Training on", len(train), "tasks")
 
     if False:
-        hardTasks = [t for t in train
-                     if '/' in t.name and '[' in t.name]
+        hardTasks = [t for t in train if "/" in t.name and "[" in t.name]
         for clamp in [True, False]:
-            for lr in [0.1, 0.05, 0.5, 1.]:
+            for lr in [0.1, 0.05, 0.5, 1.0]:
                 for steps in [50, 100, 200]:
                     for attempts in [10, 50, 100, 200]:
                         for s in [0.1, 0.5, 1, 3]:
                             start = time.time()
-                            losses = callCompiled(
-                                debugMany, hardTasks, clamp, lr, steps, attempts, s)
+                            losses = callCompiled(debugMany, hardTasks, clamp, lr, steps, attempts, s)
                             losses = dict(zip(hardTasks, losses))
                             failures = 0
-                            for t, l in sorted(
-                                    losses.items(), key=lambda t_l: t_l[1]):
+                            for t, l in sorted(losses.items(), key=lambda t_l: t_l[1]):
                                 # print t,l
                                 if l > -t.likelihoodThreshold:
                                     failures += 1
-                            eprint("clamp,lr,steps, attempts,std",
-                                   clamp, lr, steps, attempts, s)
-                            eprint(
-                                "%d/%d failures" %
-                                (failures, len(hardTasks)))
+                            eprint("clamp,lr,steps, attempts,std", clamp, lr, steps, attempts, s)
+                            eprint("%d/%d failures" % (failures, len(hardTasks)))
                             eprint("dt=", time.time() - start)
                             eprint()
                             eprint()
 
         assert False
     timestamp = datetime.datetime.now().isoformat()
-    outputDirectory = "experimentOutputs/rational/%s"%timestamp
-    os.system("mkdir -p %s"%outputDirectory)
+    outputDirectory = "experimentOutputs/rational/%s" % timestamp
+    os.system("mkdir -p %s" % outputDirectory)
 
-    explorationCompression(baseGrammar, train,
-                           outputPrefix="%s/rational"%outputDirectory,
-                           evaluationTimeout=0.1,
-                           testingTasks=test,
-                           **arguments)
+    explorationCompression(
+        baseGrammar, train, outputPrefix="%s/rational" % outputDirectory, evaluationTimeout=0.1, testingTasks=test, **arguments
+    )

@@ -22,21 +22,12 @@ class Matcher(object):
         tp = fragment.visit(m, expression, [], numberOfArguments)
         return m.context, tp, m.variableBindings
 
-    def application(
-            self,
-            fragment,
-            expression,
-            environment,
-            numberOfArguments):
-        '''returns tp of fragment.'''
+    def application(self, fragment, expression, environment, numberOfArguments):
+        """returns tp of fragment."""
         if not isinstance(expression, Application):
             raise MatchFailure()
 
-        ft = fragment.f.visit(
-            self,
-            expression.f,
-            environment,
-            numberOfArguments + 1)
+        ft = fragment.f.visit(self, expression.f, environment, numberOfArguments + 1)
         xt = fragment.x.visit(self, expression.x, environment, 0)
 
         self.context, returnType = self.context.makeVariable()
@@ -91,18 +82,12 @@ class Matcher(object):
             self.variableBindings[i] = (tp, expression)
         return tp
 
-    def abstraction(
-            self,
-            fragment,
-            expression,
-            environment,
-            numberOfArguments):
+    def abstraction(self, fragment, expression, environment, numberOfArguments):
         if not isinstance(expression, Abstraction):
             raise MatchFailure()
 
         self.context, argumentType = self.context.makeVariable()
-        returnType = fragment.body.visit(
-            self, expression.body, [argumentType] + environment, 0)
+        returnType = fragment.body.visit(self, expression.body, [argumentType] + environment, 0)
 
         return arrow(argumentType, returnType)
 
@@ -118,18 +103,14 @@ class Matcher(object):
         self.context, tp = fragment.tp.instantiate(self.context)
         return tp
 
-    def fragmentVariable(
-            self,
-            fragment,
-            expression,
-            environment,
-            numberOfArguments):
+    def fragmentVariable(self, fragment, expression, environment, numberOfArguments):
         raise Exception(
-            'Deprecated: matching against fragment variables. Convert fragment to canonical form to get rid of fragment variables.')
+            "Deprecated: matching against fragment variables. Convert fragment to canonical form to get rid of fragment variables."
+        )
 
 
 def mightMatch(f, e, d=0):
-    '''Checks whether fragment f might be able to match against expression e'''
+    """Checks whether fragment f might be able to match against expression e"""
     if f.isIndex:
         if f.bound(d):
             return f == e
@@ -139,18 +120,16 @@ def mightMatch(f, e, d=0):
     if f.isAbstraction:
         return e.isAbstraction and mightMatch(f.body, e.body, d + 1)
     if f.isApplication:
-        return e.isApplication and mightMatch(
-            f.x, e.x, d) and mightMatch(
-            f.f, e.f, d)
+        return e.isApplication and mightMatch(f.x, e.x, d) and mightMatch(f.f, e.f, d)
     assert False
 
 
 def canonicalFragment(expression):
-    '''
+    """
     Puts a fragment into a canonical form:
     1. removes all FragmentVariable's
     2. renames all free variables based on depth first traversal
-    '''
+    """
     return expression.visit(CanonicalVisitor(), 0)
 
 
@@ -163,9 +142,11 @@ class CanonicalVisitor(object):
         self.numberOfAbstractions += 1
         return Index(self.numberOfAbstractions + d - 1)
 
-    def primitive(self, e, d): return e
+    def primitive(self, e, d):
+        return e
 
-    def invented(self, e, d): return e
+    def invented(self, e, d):
+        return e
 
     def application(self, e, d):
         return Application(e.f.visit(self, d), e.x.visit(self, d))
@@ -197,8 +178,7 @@ def fragmentSize(f, boundVariableCost=0.1, freeVariableCost=0.01):
             else:
                 freeVariables += 1
         assert not isinstance(e, FragmentVariable)
-    return leaves + boundVariableCost * \
-        boundVariables + freeVariableCost * freeVariables
+    return leaves + boundVariableCost * boundVariables + freeVariableCost * freeVariables
 
 
 def primitiveSize(e):
@@ -208,7 +188,7 @@ def primitiveSize(e):
 
 
 def defragment(expression):
-    '''Converts a fragment into an invented primitive'''
+    """Converts a fragment into an invented primitive"""
     if isinstance(expression, (Primitive, Invented)):
         return expression
 
@@ -227,13 +207,11 @@ class RewriteFragments(object):
 
     def tryRewrite(self, e, numberOfArguments):
         try:
-            context, t, bindings = Matcher.match(
-                Context.EMPTY, self.fragment, e, numberOfArguments)
+            context, t, bindings = Matcher.match(Context.EMPTY, self.fragment, e, numberOfArguments)
         except MatchFailure:
             return None
 
-        assert frozenset(bindings.keys()) == frozenset(range(len(bindings))),\
-            "Perhaps the fragment is not in canonical form?"
+        assert frozenset(bindings.keys()) == frozenset(range(len(bindings))), "Perhaps the fragment is not in canonical form?"
         e = self.concrete
         for j in range(len(bindings) - 1, -1, -1):
             _, b = bindings[j]
@@ -241,42 +219,47 @@ class RewriteFragments(object):
         return e
 
     def application(self, e, numberOfArguments):
-        e = Application(e.f.visit(self, numberOfArguments + 1),
-                        e.x.visit(self, 0))
+        e = Application(e.f.visit(self, numberOfArguments + 1), e.x.visit(self, 0))
         return self.tryRewrite(e, numberOfArguments) or e
 
-    def index(self, e, numberOfArguments): return e
+    def index(self, e, numberOfArguments):
+        return e
 
-    def invented(self, e, numberOfArguments): return e
+    def invented(self, e, numberOfArguments):
+        return e
 
-    def primitive(self, e, numberOfArguments): return e
+    def primitive(self, e, numberOfArguments):
+        return e
 
     def abstraction(self, e, numberOfArguments):
         e = Abstraction(e.body.visit(self, 0))
         return self.tryRewrite(e, numberOfArguments) or e
 
-    def rewrite(self, e): return e.visit(self, 0)
+    def rewrite(self, e):
+        return e.visit(self, 0)
 
     @staticmethod
     def rewriteFrontier(frontier, fragment):
         worker = RewriteFragments(fragment)
-        return Frontier([FrontierEntry(program=worker.rewrite(e.program),
-                                       logLikelihood=e.logLikelihood,
-                                       logPrior=e.logPrior,
-                                       logPosterior=e.logPosterior)
-                         for e in frontier],
-                        task=frontier.task)
+        return Frontier(
+            [
+                FrontierEntry(
+                    program=worker.rewrite(e.program),
+                    logLikelihood=e.logLikelihood,
+                    logPrior=e.logPrior,
+                    logPosterior=e.logPosterior,
+                )
+                for e in frontier
+            ],
+            task=frontier.task,
+        )
 
 
 def proposeFragmentsFromFragment(f):
-    '''Abstracts out repeated structure within a single fragment'''
+    """Abstracts out repeated structure within a single fragment"""
     yield f
     freeVariables = f.numberOfFreeVariables
-    closedSubtrees = Counter(
-        subtree for _,
-        subtree in f.walk() if not isinstance(
-            subtree,
-            Index) and subtree.closed)
+    closedSubtrees = Counter(subtree for _, subtree in f.walk() if not isinstance(subtree, Index) and subtree.closed)
     del closedSubtrees[f]
     for subtree, freq in closedSubtrees.items():
         if freq < 2:
@@ -293,11 +276,9 @@ def nontrivial(f):
     if isinstance(f.x, Index):
         # Make sure that the index is used somewhere else
         if not any(
-                isinstance(
-                    child,
-                    Index) and child.i -
-                surroundingAbstractions == f.x.i for surroundingAbstractions,
-                child in f.f.walk()):
+            isinstance(child, Index) and child.i - surroundingAbstractions == f.x.i
+            for surroundingAbstractions, child in f.f.walk()
+        ):
             return False
 
     numberOfHoles = 0
@@ -310,10 +291,9 @@ def nontrivial(f):
             numberOfHoles += 1
         if isinstance(child, Index) and child.free(surroundingAbstractions):
             numberOfVariables += 1
-    #eprint("Fragment %s has %d calls and %d variables and %d primitives"%(f,numberOfHoles,numberOfVariables,numberOfPrimitives))
+    # eprint("Fragment %s has %d calls and %d variables and %d primitives"%(f,numberOfHoles,numberOfVariables,numberOfPrimitives))
 
-    return numberOfPrimitives + 0.5 * \
-        (numberOfHoles + numberOfVariables) > 1.5 and numberOfPrimitives >= 1
+    return numberOfPrimitives + 0.5 * (numberOfHoles + numberOfVariables) > 1.5 and numberOfPrimitives >= 1
 
 
 def violatesLaziness(fragment):
@@ -336,17 +316,14 @@ def violatesLaziness(fragment):
         y = xs[1]
         n = xs[2]
 
-        return \
-            any(yc.isIndex and yc.i >= yd
-                for yd, yc in y.walk(surroundingAbstractions)) or \
-            any(nc.isIndex and nc.i >= nd
-                for nd, nc in n.walk(surroundingAbstractions))
+        return any(yc.isIndex and yc.i >= yd for yd, yc in y.walk(surroundingAbstractions)) or any(
+            nc.isIndex and nc.i >= nd for nd, nc in n.walk(surroundingAbstractions)
+        )
 
     return False
 
 
 def proposeFragmentsFromProgram(p, arity):
-
     def fragment(expression, a, toplevel=True):
         """Generates fragments that unify with expression"""
 
@@ -390,16 +367,23 @@ def proposeFragmentsFromProgram(p, arity):
         else:
             assert isinstance(expression, (Invented, Primitive, Index))
 
-    return {canonicalFragment(f) for b in range(arity + 1)
-            for f in fragments(p, b) if nontrivial(f)}
+    return {canonicalFragment(f) for b in range(arity + 1) for f in fragments(p, b) if nontrivial(f)}
 
 
 def proposeFragmentsFromFrontiers(frontiers, a, CPUs=1):
     fragmentsFromEachFrontier = parallelMap(
-        CPUs, lambda frontier: {
-            fp for entry in frontier.entries for f in proposeFragmentsFromProgram(
-                entry.program, a) for fp in proposeFragmentsFromFragment(f)}, frontiers)
-    allFragments = Counter(f for frontierFragments in fragmentsFromEachFrontier
-                           for f in frontierFragments)
-    return [fragment for fragment, frequency in allFragments.items()
-            if frequency >= 2 and fragment.wellTyped() and nontrivial(fragment)]
+        CPUs,
+        lambda frontier: {
+            fp
+            for entry in frontier.entries
+            for f in proposeFragmentsFromProgram(entry.program, a)
+            for fp in proposeFragmentsFromFragment(f)
+        },
+        frontiers,
+    )
+    allFragments = Counter(f for frontierFragments in fragmentsFromEachFrontier for f in frontierFragments)
+    return [
+        fragment
+        for fragment, frequency in allFragments.items()
+        if frequency >= 2 and fragment.wellTyped() and nontrivial(fragment)
+    ]

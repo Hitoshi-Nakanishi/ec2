@@ -3,12 +3,10 @@ import _thread
 import sys
 import os
 
-from protonet_score import PretrainedProtonetDistScore, \
-                           load_image_path, load_image
+from protonet_score import PretrainedProtonetDistScore, load_image_path, load_image
 
 cache = {}
-model = PretrainedProtonetDistScore(os.path.dirname(os.path.realpath(__file__))
-        + "/results-OM/best_model.pt")
+model = PretrainedProtonetDistScore(os.path.dirname(os.path.realpath(__file__)) + "/results-OM/best_model.pt")
 
 
 def eprint(*args, **kwargs):
@@ -32,18 +30,18 @@ def handle_client(connection):
         # eprint("-> Client connected")
         while True:
 
-            l1 = int.from_bytes(connection.recv(4), byteorder='big')
+            l1 = int.from_bytes(connection.recv(4), byteorder="big")
             data = connection.recv(l1)
             idRef = data.decode("utf8")
 
-            l2 = int.from_bytes(connection.recv(4), byteorder='big')
+            l2 = int.from_bytes(connection.recv(4), byteorder="big")
             img = connection.recv(l2)
 
             if idRef != "DONE":
                 score = compute_score(idRef, img)
-                loss = str(1000000 * score['dist'][0][0]).encode("utf8")
+                loss = str(1000000 * score["dist"][0][0]).encode("utf8")
                 # loss = str(score['loss']).encode("utf8")
-                connection.sendall(len(loss).to_bytes(4, byteorder='big'))
+                connection.sendall(len(loss).to_bytes(4, byteorder="big"))
                 connection.sendall(loss)
             else:
                 break

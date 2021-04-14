@@ -21,16 +21,13 @@ def lcs(u, v):
             else:
                 t[(n, m)] = 0
     l, n, m = max((l, n, m) for (n, m), l in t.items())
-    return u[n - l:n]
+    return u[n - l : n]
 
 
-delimiters = ['.', ',', ' ', '(', ')', '-']
-characters = [chr(ord('a') + j)
-              for j in range(26)] + \
-             [chr(ord('A') + j)
-              for j in range(26)] + \
-    [str(j) for j in range(10)] + \
-    ['+']
+delimiters = [".", ",", " ", "(", ")", "-"]
+characters = (
+    [chr(ord("a") + j) for j in range(26)] + [chr(ord("A") + j) for j in range(26)] + [str(j) for j in range(10)] + ["+"]
+)
 
 WORDS = None
 
@@ -47,25 +44,17 @@ def randomWord(minimum=1, predicate=None):
     global WORDS
     if WORDS is None:
         tasks, cheating = loadPBETasks()
-        observations = {''.join(z)
-                        for t in tasks
-                        for xs, y in t.examples
-                        for z in list(xs) + [y]}
+        observations = {"".join(z) for t in tasks for xs, y in t.examples for z in list(xs) + [y]}
 
         def splitMany(s, ds):
             if len(ds) == 0:
                 return [s]
             d = ds[0]
             ds = ds[1:]
-            s = [w
-                 for z in s.split(d)
-                 for w in splitMany(z, ds)
-                 if len(w) > 0]
+            s = [w for z in s.split(d) for w in splitMany(z, ds) if len(w) > 0]
             return s
 
-        WORDS = {w
-                 for o in observations
-                 for w in splitMany(o, delimiters)}
+        WORDS = {w for o in observations for w in splitMany(o, delimiters)}
         WORDS = list(sorted(list(WORDS)))
 
     # a disproportionately large fraction of the words have length three
@@ -74,17 +63,15 @@ def randomWord(minimum=1, predicate=None):
         if random.random() > 0.7:
             candidate = random.choice([w for w in WORDS if len(w) >= minimum])
         else:
-            candidate = random.choice(
-                [w for w in WORDS if len(w) >= minimum and len(w) != 3])
+            candidate = random.choice([w for w in WORDS if len(w) >= minimum and len(w) != 3])
         if predicate is None or predicate(candidate):
             return candidate
 
 
 def randomWords(ds, minimum=1, lb=2, ub=4):
-    words = [randomWord(minimum=minimum)
-             for _ in range(random.choice(range(lb, ub+1)))]
+    words = [randomWord(minimum=minimum) for _ in range(random.choice(range(lb, ub + 1)))]
     s = ""
-    for j,w in enumerate(words):
+    for j, w in enumerate(words):
         if j > 0:
             s += random.choice(ds)
         s += w
@@ -93,13 +80,16 @@ def randomWords(ds, minimum=1, lb=2, ub=4):
 
 def makeTasks():
     import random
+
     random.seed(9)
 
     NUMBEROFEXAMPLES = 4
 
     problems = []
 
-    def toList(s): return [c for c in s]
+    def toList(s):
+        return [c for c in s]
+
     # Converts strings into a list of characters depending on the type
 
     def preprocess(x):
@@ -114,163 +104,159 @@ def makeTasks():
         assert False
 
     def problem(n, examples, needToTrain=False):
-        task = Task(n, guess_arrow_type(examples),
-                    [(preprocess(x),
-                      preprocess(y))
-                     for x, y in examples])
+        task = Task(n, guess_arrow_type(examples), [(preprocess(x), preprocess(y)) for x, y in examples])
         task.mustTrain = True
         problems.append(task)
 
-    for d1, d2 in randomPermutation(crossProduct(delimiters, delimiters))[
-            :len(delimiters) * 2]:
+    for d1, d2 in randomPermutation(crossProduct(delimiters, delimiters))[: len(delimiters) * 2]:
         if d1 != d2:
-            problem("Replace '%s' w/ '%s'" % (d1, d2),
-                    [((x,), x.replace(d1, d2))
-                     for _ in range(NUMBEROFEXAMPLES)
-                     for x in [randomWords(d1)]],
-                    needToTrain=False)
+            problem(
+                "Replace '%s' w/ '%s'" % (d1, d2),
+                [((x,), x.replace(d1, d2)) for _ in range(NUMBEROFEXAMPLES) for x in [randomWords(d1)]],
+                needToTrain=False,
+            )
     for d in delimiters:
-        problem("drop first word delimited by '%s'" % d,
-                [((x,), d.join(x.split(d)[1:]))
-                 for _ in range(NUMBEROFEXAMPLES)
-                 for x in [randomWords(d)]],
-                needToTrain=True)
+        problem(
+            "drop first word delimited by '%s'" % d,
+            [((x,), d.join(x.split(d)[1:])) for _ in range(NUMBEROFEXAMPLES) for x in [randomWords(d)]],
+            needToTrain=True,
+        )
         for n in [0, 1, -1]:
-            problem("nth (n=%d) word delimited by '%s'" % (n, d),
-                    [((x,), x.split(d)[n])
-                     for _ in range(NUMBEROFEXAMPLES)
-                     for x in [randomWords(d)]],
-                    needToTrain=True)
+            problem(
+                "nth (n=%d) word delimited by '%s'" % (n, d),
+                [((x,), x.split(d)[n]) for _ in range(NUMBEROFEXAMPLES) for x in [randomWords(d)]],
+                needToTrain=True,
+            )
     for d1 in delimiters:
-        problem("Append two words delimited by '%s'" % (d1),
-                [((x, y), x + d1 + y)
-                 for _ in range(NUMBEROFEXAMPLES)
-                 for x in [randomWord()]
-                 for y in [randomWord()]],
-                needToTrain=True)
-    for d1, d2 in randomPermutation(
-        crossProduct(
-            delimiters, delimiters))[
-            :len(delimiters)]:
-        problem("Append two words delimited by '%s%s'" % (d1, d2),
-                [((x, y), x + d1 + d2 + y)
-                 for _ in range(NUMBEROFEXAMPLES)
-                 for x in [randomWord()]
-                 for y in [randomWord()]],
-                needToTrain=True)
+        problem(
+            "Append two words delimited by '%s'" % (d1),
+            [((x, y), x + d1 + y) for _ in range(NUMBEROFEXAMPLES) for x in [randomWord()] for y in [randomWord()]],
+            needToTrain=True,
+        )
+    for d1, d2 in randomPermutation(crossProduct(delimiters, delimiters))[: len(delimiters)]:
+        problem(
+            "Append two words delimited by '%s%s'" % (d1, d2),
+            [((x, y), x + d1 + d2 + y) for _ in range(NUMBEROFEXAMPLES) for x in [randomWord()] for y in [randomWord()]],
+            needToTrain=True,
+        )
     for n in range(1, 6):
-        problem("Drop last %d characters" % n,
-                [((x,), x[:-n])
-                 for _ in range(NUMBEROFEXAMPLES)
-                 for x in [randomWord(minimum=n)]],
-                needToTrain=True)
+        problem(
+            "Drop last %d characters" % n,
+            [((x,), x[:-n]) for _ in range(NUMBEROFEXAMPLES) for x in [randomWord(minimum=n)]],
+            needToTrain=True,
+        )
         if n > 1:
-            problem("Take first %d characters" % n,
-                    [((x,), x[:n])
-                     for _ in range(NUMBEROFEXAMPLES)
-                     for x in [randomWord(minimum=n)]],
-                    needToTrain=True)
-    for d1, d2 in randomPermutation(
-        crossProduct(
-            delimiters, delimiters))[
-            :len(delimiters)]:
-        problem("Extract word delimited by '%s' - '%s'" % (d1, d2),
-                [((a + d1 + b + d2 + c + d + e,), b)
-                 for _ in range(int(NUMBEROFEXAMPLES / 2))
-                 for d in [d1, d2]
-                 for a in [randomWord()]
-                 for b in [randomWord()]
-                 for c in [randomWord()]
-                 for e in [randomWord()]],
-                needToTrain=True)
+            problem(
+                "Take first %d characters" % n,
+                [((x,), x[:n]) for _ in range(NUMBEROFEXAMPLES) for x in [randomWord(minimum=n)]],
+                needToTrain=True,
+            )
+    for d1, d2 in randomPermutation(crossProduct(delimiters, delimiters))[: len(delimiters)]:
+        problem(
+            "Extract word delimited by '%s' - '%s'" % (d1, d2),
+            [
+                ((a + d1 + b + d2 + c + d + e,), b)
+                for _ in range(int(NUMBEROFEXAMPLES / 2))
+                for d in [d1, d2]
+                for a in [randomWord()]
+                for b in [randomWord()]
+                for c in [randomWord()]
+                for e in [randomWord()]
+            ],
+            needToTrain=True,
+        )
 
     for n in range(len(delimiters)):
-        problem("First letters of words (%s)" % ("I" * (1 + n)),
-                [((x,), "".join(map(lambda z: z[0], x.split(' '))))
-                 for _ in range(NUMBEROFEXAMPLES)
-                 for x in [randomWords(' ')]
-                 ],
-                needToTrain=True)
-        
+        problem(
+            "First letters of words (%s)" % ("I" * (1 + n)),
+            [((x,), "".join(map(lambda z: z[0], x.split(" ")))) for _ in range(NUMBEROFEXAMPLES) for x in [randomWords(" ")]],
+            needToTrain=True,
+        )
+
     for d in delimiters:
-        problem("Take first character and append '%s'" % d,
-                [((x,), x[0] + d)
-                 for _ in range(NUMBEROFEXAMPLES)
-                 for x in [randomWord()]],
-                needToTrain=True)
+        problem(
+            "Take first character and append '%s'" % d,
+            [((x,), x[0] + d) for _ in range(NUMBEROFEXAMPLES) for x in [randomWord()]],
+            needToTrain=True,
+        )
 
     for n in range(len(delimiters)):
-        problem("Abbreviate separate words (%s)" % ("I" * (n + 1)),
-                [((x, y), "%s.%s." % (x[0], y[0]))
-                 for _ in range(NUMBEROFEXAMPLES)
-                 for y in [randomWord()]
-                 for x in [randomWord()]])
+        problem(
+            "Abbreviate separate words (%s)" % ("I" * (n + 1)),
+            [
+                ((x, y), "%s.%s." % (x[0], y[0]))
+                for _ in range(NUMBEROFEXAMPLES)
+                for y in [randomWord()]
+                for x in [randomWord()]
+            ],
+        )
         d = delimiters[n]
-        problem("Abbreviate words separated by '%s'" % d,
-                [((x + d + y,), "%s.%s." % (x[0], y[0]))
-                 for _ in range(NUMBEROFEXAMPLES)
-                 for y in [randomWord()]
-                 for x in [randomWord()]])
+        problem(
+            "Abbreviate words separated by '%s'" % d,
+            [
+                ((x + d + y,), "%s.%s." % (x[0], y[0]))
+                for _ in range(NUMBEROFEXAMPLES)
+                for y in [randomWord()]
+                for x in [randomWord()]
+            ],
+        )
 
     for n in range(len(delimiters)):
-        problem("Append 2 strings (%s)" % ('I' * (n + 1)),
-                [((x, y), x + y)
-                 for _ in range(NUMBEROFEXAMPLES)
-                 for y in [randomWord()]
-                 for x in [randomWord()]],
-                needToTrain=True)
+        problem(
+            "Append 2 strings (%s)" % ("I" * (n + 1)),
+            [((x, y), x + y) for _ in range(NUMBEROFEXAMPLES) for y in [randomWord()] for x in [randomWord()]],
+            needToTrain=True,
+        )
 
     for n in range(len(delimiters)):
         w = randomWord(minimum=3)
-        problem("Prepend '%s'" % w,
-                [((x,), w + x)
-                 for _ in range(NUMBEROFEXAMPLES)
-                 for x in [randomWord()]])
+        problem("Prepend '%s'" % w, [((x,), w + x) for _ in range(NUMBEROFEXAMPLES) for x in [randomWord()]])
         w = randomWord(minimum=3)
-        problem("Append '%s'" % w,
-                [((x,), x + w)
-                 for _ in range(NUMBEROFEXAMPLES)
-                 for x in [randomWord()]])
+        problem("Append '%s'" % w, [((x,), x + w) for _ in range(NUMBEROFEXAMPLES) for x in [randomWord()]])
         w = randomWord(minimum=3)
-        problem("Prepend '%s' to first word" % w,
-                [((x + ' ' + y,), w + x)
-                 for _ in range(NUMBEROFEXAMPLES)
-                 for x in [randomWord()]
-                 for y in [randomWord()]])
+        problem(
+            "Prepend '%s' to first word" % w,
+            [((x + " " + y,), w + x) for _ in range(NUMBEROFEXAMPLES) for x in [randomWord()] for y in [randomWord()]],
+        )
 
-    for n in range(1,6):
-        problem("parentheses around a single word (%s)"%('I'*n),
-                [((w,),"(%s)"%w)
-                 for _ in range(NUMBEROFEXAMPLES)
-                 for w in [randomWord()] ])
-    problem("parentheses around first word",
-            [((w + " " + s,),"(%s)"%w)
-             for _ in range(NUMBEROFEXAMPLES)
-             for w in [randomWord()]
-             for s in [randomWords(" ")] ])
-    problem("parentheses around second word",
-            [((s,), "(%s)"%(s.split(" ")[1]))
-             for _ in range(NUMBEROFEXAMPLES)
-             for s in [randomWords(" ")] ])
+    for n in range(1, 6):
+        problem(
+            "parentheses around a single word (%s)" % ("I" * n),
+            [((w,), "(%s)" % w) for _ in range(NUMBEROFEXAMPLES) for w in [randomWord()]],
+        )
+    problem(
+        "parentheses around first word",
+        [((w + " " + s,), "(%s)" % w) for _ in range(NUMBEROFEXAMPLES) for w in [randomWord()] for s in [randomWords(" ")]],
+    )
+    problem(
+        "parentheses around second word",
+        [((s,), "(%s)" % (s.split(" ")[1])) for _ in range(NUMBEROFEXAMPLES) for s in [randomWords(" ")]],
+    )
 
     allowed = [d for d in delimiters if d not in "()"]
-    for d1,d2 in randomPermutation(crossProduct(allowed, allowed))[:len(delimiters)]:
-        problem("parentheses around word delimited by '%s' & '%s'"%(d1,d2),
-                [((prefix + d1 + word + d2 + suffix,),
-                  prefix + d1 + '(' + word + ')' + d2 + suffix)
-                 for _ in range(NUMBEROFEXAMPLES)
-                 for prefix in [randomWords("", lb=0, ub=1)]
-                 for suffix in [randomWords(allowed, ub=2, lb=1)]
-                 for word in [randomWord()] ])
+    for d1, d2 in randomPermutation(crossProduct(allowed, allowed))[: len(delimiters)]:
+        problem(
+            "parentheses around word delimited by '%s' & '%s'" % (d1, d2),
+            [
+                ((prefix + d1 + word + d2 + suffix,), prefix + d1 + "(" + word + ")" + d2 + suffix)
+                for _ in range(NUMBEROFEXAMPLES)
+                for prefix in [randomWords("", lb=0, ub=1)]
+                for suffix in [randomWords(allowed, ub=2, lb=1)]
+                for word in [randomWord()]
+            ],
+        )
 
     for n in range(7):
         w = randomWord(minimum=3)
-        problem("ensure suffix `%s`"%w,
-                [ ((s + (w if f else ""),), s + w)
-                  for _ in range(NUMBEROFEXAMPLES)
-                  for s in [randomWords(" ")]
-                  for f in [random.choice([True,False])] ])
-            
+        problem(
+            "ensure suffix `%s`" % w,
+            [
+                ((s + (w if f else ""),), s + w)
+                for _ in range(NUMBEROFEXAMPLES)
+                for s in [randomWords(" ")]
+                for f in [random.choice([True, False])]
+            ],
+        )
 
     for p in problems:
         guessConstantStrings(p)
@@ -291,9 +277,7 @@ def loadPBETasks(directory="PBE_Strings_Track"):
 
     def findStrings(s):
         if isinstance(s, list):
-            return [y
-                    for x in s
-                    for y in findStrings(x)]
+            return [y for x in s for y in findStrings(x)]
         if isinstance(s, str):
             return [s]
         return []
@@ -304,7 +288,7 @@ def loadPBETasks(directory="PBE_Strings_Track"):
     tasks = []
     cheatingTasks = []
     for f in os.listdir(directory):
-        if not f.endswith('.sl'):
+        if not f.endswith(".sl"):
             continue
         with open(directory + "/" + f, "r") as handle:
             message = "(%s)" % (handle.read())
@@ -318,27 +302,28 @@ def loadPBETasks(directory="PBE_Strings_Track"):
         for e in expression:
             if len(e) == 0:
                 continue
-            if e[0] == Symbol('constraint'):
+            if e[0] == Symbol("constraint"):
                 e = e[1]
-                assert e[0] == Symbol('=')
+                assert e[0] == Symbol("=")
                 inputs = e[1]
-                assert inputs[0] == Symbol('f')
+                assert inputs[0] == Symbol("f")
                 inputs = inputs[1:]
                 output = e[2]
                 examples.append((inputs, output))
-            elif e[0] == Symbol('synth-fun'):
-                if e[1] == Symbol('f'):
+            elif e[0] == Symbol("synth-fun"):
+                if e[1] == Symbol("f"):
                     constants += findStrings(e)
                 else:
                     declarative = True
                     break
-        if declarative: continue
-        
+        if declarative:
+            continue
+
         examples = list({(tuple(xs), y) for xs, y in examples})
 
-        task = Task(name, arrow(*[tstr] * (len(examples[0][0]) + 1)),
-                    [(tuple(map(explode, xs)), explode(y))
-                     for xs, y in examples])
+        task = Task(
+            name, arrow(*[tstr] * (len(examples[0][0]) + 1)), [(tuple(map(explode, xs)), explode(y)) for xs, y in examples]
+        )
         cheat = task
 
         tasks.append(task)
@@ -359,22 +344,18 @@ def guessConstantStrings(task):
             for m in range(n + 1, min(N, len(examples))):
                 y1 = examples[n][1]
                 y2 = examples[m][1]
-                l = ''.join(lcs(y1, y2))
+                l = "".join(lcs(y1, y2))
                 if len(l) > 2:
                     guesses[l] = guesses.get(l, 0) + 1
 
-        task.stringConstants = [g for g, f in guesses.items()
-                                if f >= T]
+        task.stringConstants = [g for g, f in guesses.items() if f >= T]
     else:
         task.stringConstants = []
-                    
 
-    task.BIC = 1.
+    task.BIC = 1.0
     task.maxParameters = 1
 
-    task.specialTask = ("stringConstant",
-                        {"maxParameters": task.maxParameters,
-                         "stringConstants": task.stringConstants})
+    task.specialTask = ("stringConstant", {"maxParameters": task.maxParameters, "stringConstants": task.stringConstants})
 
 
 if __name__ == "__main__":
@@ -403,6 +384,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1 and "json" in sys.argv[1]:
         import json
+
         tasks = makeTasks()
         obj = [t.as_json_dict() for t in tasks]
         json.dump(obj, sys.stdout)
@@ -412,13 +394,16 @@ if __name__ == "__main__":
             print(t.name)
             print(t.request)
             if as_tex:
-                print("""\\begin{tabular}{ll}
+                print(
+                    """\\begin{tabular}{ll}
                 \\toprule Input&Output\\\\\\midrule
         %s
         \\\\\\bottomrule
-        \\end{tabular}""" % (" \\\\\n ".join(x[0] + " & " + y for x, y in t.examples)))
+        \\end{tabular}"""
+                    % (" \\\\\n ".join(x[0] + " & " + y for x, y in t.examples))
+                )
             else:
                 for x, y in t.examples:
-                    print(x[0], '\t', y)
+                    print(x[0], "\t", y)
             print()
         print(len(tasks), "tasks")

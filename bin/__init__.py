@@ -44,19 +44,19 @@ from bin import symmetryBreaking
 from bin import taskRankGraphs
 from bin.deprecated import compressionGraph, evolution, extractDeepcoderDataset, python_server, symbolicRegression
 
-sys.modules['analyzeDepth'] = analyzeDepth
-sys.modules['compiledDriver'] = compiledDriver
-sys.modules['compressionGraph'] = compressionGraph
-sys.modules['evolution'] = evolution
-sys.modules['examineFrontier'] = examineFrontier
-sys.modules['extractDeepcoderDataset'] = extractDeepcoderDataset
-sys.modules['graphs'] = graphs
-sys.modules['launch'] = launch
-sys.modules['logReports'] = logReports
-sys.modules['physics'] = physics
-sys.modules['python_server'] = python_server
-sys.modules['rational'] = rational
-sys.modules['scientificLaws'] = scientificLaws
-sys.modules['symbolicRegression'] = symbolicRegression
-sys.modules['symmetryBreaking'] = symmetryBreaking
-sys.modules['taskRankGraphs'] = taskRankGraphs
+sys.modules["analyzeDepth"] = analyzeDepth
+sys.modules["compiledDriver"] = compiledDriver
+sys.modules["compressionGraph"] = compressionGraph
+sys.modules["evolution"] = evolution
+sys.modules["examineFrontier"] = examineFrontier
+sys.modules["extractDeepcoderDataset"] = extractDeepcoderDataset
+sys.modules["graphs"] = graphs
+sys.modules["launch"] = launch
+sys.modules["logReports"] = logReports
+sys.modules["physics"] = physics
+sys.modules["python_server"] = python_server
+sys.modules["rational"] = rational
+sys.modules["scientificLaws"] = scientificLaws
+sys.modules["symbolicRegression"] = symbolicRegression
+sys.modules["symmetryBreaking"] = symmetryBreaking
+sys.modules["taskRankGraphs"] = taskRankGraphs
