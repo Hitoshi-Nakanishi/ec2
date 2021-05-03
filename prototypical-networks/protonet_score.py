@@ -1,12 +1,8 @@
 # protonet score
-
 import torch
 import numpy as np
-
 from PIL import Image
-
 from torch import nn
-
 size = 28
 
 
@@ -39,26 +35,18 @@ class PretrainedProtonetDistScore(nn.Module):
         self.model.requires_grad = False
 
     def score(self, images, targets):  # TODO make batch compatible (Max)
-
         xs = targets.view(-1, 1, 1, targets.size(2), targets.size(3))
         xq = images.view(-1, 1, 1, images.size(2), images.size(3))
-
         d = {"xs": xs, "xq": xq}
-
         results = self.model.myloss(d)
-
         return results[1]
-
 
 if __name__ == "__main__":
     model = PretrainedProtonetDistScore("./results/best_model.pt")
-
     i1 = "data/geometry/data/213_snake/213_snake_random_9.png"
     i2 = "data/geometry/data/213_snake/213_snake_random_8.png"
     i2 = "data/geometry/data/405_4by4squares/405_4by4squares_random_30.png"
-
     x = load_image_path(i1)
     y = load_image_path(i2)
-
     res = model.score(x, y)
     print(res["loss"])

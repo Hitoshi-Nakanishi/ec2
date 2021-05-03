@@ -3,12 +3,10 @@ try:
 except ModuleNotFoundError:
     import bin.binutil  # alt import if called as module
 
-
 from json.decoder import JSONDecodeError
 from syntax_robustfill import SyntaxCheckingRobustFill
 from image_robustfill import Image_RobustFill
 import time
-
 from dreamcoder.grammar import Grammar
 from dreamcoder.domains.text.makeTextTasks import *
 import dreamcoder.domains.text.main as Text
@@ -16,11 +14,8 @@ from dreamcoder.task import Task
 from dreamcoder.frontier import Frontier, FrontierEntry
 from dreamcoder.type import Context, arrow, tbool, tlist, tint, t0, UnificationFailure
 from dreamcoder.type import tpregex
-
 from dreamcoder.domains.arithmetic.arithmeticPrimitives import real, real_division, real_addition, real_multiplication
-
 from rational import RandomParameterization, FeatureExtractor, drawFunction
-
 import rational
 
 # text:

@@ -1501,14 +1501,6 @@ class RandomFeatureExtractor(nn.Module):
         return Task("dummy task", t, [])
 
 
-class Flatten(nn.Module):
-    def __init__(self):
-        super(Flatten, self).__init__()
-
-    def forward(self, x):
-        return x.view(x.size(0), -1)
-
-
 class ImageFeatureExtractor(nn.Module):
     def __init__(self, inputImageDimension, resizedDimension=None, channels=1):
         super(ImageFeatureExtractor, self).__init__()
@@ -1523,19 +1515,16 @@ class ImageFeatureExtractor(nn.Module):
                 nn.ReLU(),
                 nn.MaxPool2d(2),
             )
-
         # channels for hidden
         hid_dim = 64
         z_dim = 64
-
         self.encoder = nn.Sequential(
             conv_block(channels, hid_dim),
             conv_block(hid_dim, hid_dim),
             conv_block(hid_dim, hid_dim),
             conv_block(hid_dim, z_dim),
-            Flatten(),
+            nn.Flatten(),
         )
-
         # Each layer of the encoder halves the dimension, except for the last layer which flattens
         outputImageDimensionality = self.resizedDimension / (2 ** (len(self.encoder) - 1))
         self.outputDimensionality = int(z_dim * outputImageDimensionality * outputImageDimensionality)
@@ -1569,3 +1558,22 @@ class ImageFeatureExtractor(nn.Module):
         if insertBatch:
             y = y[0, :]
         return y
+
+class JSONFeatureExtractor(object):
+    def __init__(self, tasks, cudaFalse):
+        # self.averages, self.deviations = Task.featureMeanAndStandardDeviation(tasks)
+        # self.outputDimensionality = len(self.averages)
+        self.cuda = cuda
+        self.tasks = tasks
+
+    def stringify(self, x):
+        # No whitespace #maybe kill the seperators
+        return json.dumps(x, separators=(',', ':'))
+
+    def featuresOfTask(self, t):
+        # >>> t.request to get the type
+        # >>> t.examples to get input/output examples
+        # this might actually be okay, because the input should just be nothing
+        #return [(self.stringify(inputs), self.stringify(output))
+        #        for (inputs, output) in t.examples]
+        return [(list(output),) for (inputs, output) in t.examples]

@@ -1,16 +1,11 @@
 import os
 import glob
-
 from functools import partial
-
 import numpy as np
 from PIL import Image, ImageOps
-
 import torch
-
 from torchnet.dataset import ListDataset, TransformDataset
 from torchnet.transform import compose
-
 from protonets.data.base import convert_dict, CudaTransform, EpisodicBatchSampler, SequentialBatchSampler
 
 GEOMETRY_DATA_DIR = os.path.join(os.path.dirname(__file__), "../../data/geometry")

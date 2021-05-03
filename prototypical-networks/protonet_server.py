@@ -2,7 +2,6 @@ import socket
 import _thread
 import sys
 import os
-
 from protonet_score import PretrainedProtonetDistScore, load_image_path, load_image
 
 cache = {}
@@ -29,14 +28,11 @@ def handle_client(connection):
     try:
         # eprint("-> Client connected")
         while True:
-
             l1 = int.from_bytes(connection.recv(4), byteorder="big")
             data = connection.recv(l1)
             idRef = data.decode("utf8")
-
             l2 = int.from_bytes(connection.recv(4), byteorder="big")
             img = connection.recv(l2)
-
             if idRef != "DONE":
                 score = compute_score(idRef, img)
                 loss = str(1000000 * score["dist"][0][0]).encode("utf8")
@@ -55,9 +51,7 @@ def handle_client(connection):
 
 
 if __name__ == "__main__":
-
     server_address = "./protonet_socket"
-
     try:
         os.unlink(server_address)
     except OSError:

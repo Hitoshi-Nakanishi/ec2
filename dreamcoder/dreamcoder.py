@@ -3,7 +3,6 @@ import dill
 
 from dreamcoder.compression import induceGrammar
 from dreamcoder.utilities import *
-
 try:
     from dreamcoder.recognition import *
 except:
@@ -862,11 +861,11 @@ def commandlineArguments(
     storeTaskMetrics=False,
     rewriteTaskMetrics=True,
 ):
+    import argparse
     if cuda is None:
         cuda = torch.cuda.is_available()
     print("CUDA is available?:", torch.cuda.is_available())
     print("using cuda?:", cuda)
-    import argparse
 
     parser = argparse.ArgumentParser(description="")
     parser.add_argument(

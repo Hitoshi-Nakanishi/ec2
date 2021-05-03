@@ -13,13 +13,6 @@ try:  # pypy will fail
     import torch.nn as nn
     import torch.nn.functional as F
 
-    class Flatten(nn.Module):
-        def __init__(self):
-            super(Flatten, self).__init__()
-
-        def forward(self, x):
-            return x.view(x.size(0), -1)
-
     class TowerCNN(nn.Module):
         special = "tower"
 
@@ -27,7 +20,6 @@ try:  # pypy will fail
             super(TowerCNN, self).__init__()
             self.CUDA = cuda
             self.recomputeTasks = True
-
             self.outputDimensionality = H
 
             def conv_block(in_channels, out_channels):
@@ -41,19 +33,16 @@ try:  # pypy will fail
             self.inputImageDimension = 256
             self.resizedDimension = 64
             assert self.inputImageDimension % self.resizedDimension == 0
-
             # channels for hidden
             hid_dim = 64
             z_dim = 64
-
             self.encoder = nn.Sequential(
                 conv_block(6, hid_dim),
                 conv_block(hid_dim, hid_dim),
                 conv_block(hid_dim, hid_dim),
                 conv_block(hid_dim, z_dim),
-                Flatten(),
+                nn.Flatten(),
             )
-
             self.outputDimensionality = 1024
 
             if cuda:
@@ -74,10 +63,8 @@ try:  # pypy will fail
                 pass
             else:
                 assert False, "v has the shape %s" % (str(v.shape))
-
             if v2 is None:
                 v2 = np.zeros(v.shape)
-
             v = np.concatenate((v, v2), axis=3)
             v = np.transpose(v, (0, 3, 1, 2))
             assert v.shape == (v.shape[0], 6, self.inputImageDimension, self.inputImageDimension)
@@ -120,12 +107,10 @@ try:  # pypy will fail
                     return None
                 if len(pl) > 100 or towerLength(pl) > 360:
                     return None
-
                 t = SupervisedTower("tower dream", p)
                 return t
             except Exception as e:
                 return None
-
 
 except:
     pass
@@ -168,9 +153,6 @@ def dreamOfTowers(grammar, prefix, N=250, make_montage=True):
 
 def visualizePrimitives(primitives, fn=None):
     from itertools import product
-
-    # from pylab import imshow,show
-
     from dreamcoder.domains.tower.towerPrimitives import _left, _right, _loop, _embed, _empty_tower, TowerState
 
     _13 = Program.parse("1x3").value
